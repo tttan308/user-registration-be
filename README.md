@@ -5,7 +5,7 @@
 
 ```bash
 # 1. Clone the repository.
-git clone git@github.com:EmotiRise/emoti-rise-be.git
+git clone git@github.com:user-registration-be/emoti-rise-be.git
 
 # 2. Enter your user-registration-be folder.
 cd user-registration-be
