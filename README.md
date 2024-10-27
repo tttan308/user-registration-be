@@ -1,4 +1,4 @@
-# Backend Implementation (NestJS recommended)
+# Backend Implementation (NestJS)
 ## Database Setup:
 ### Create a user schema with at least these fields:
 - email (String, required, unique)
