@@ -1,5 +1,5 @@
 
-# EmotiRise Backend
+# Authen Backend
 
 ## Getting started
 
@@ -7,8 +7,8 @@
 # 1. Clone the repository.
 git clone git@github.com:EmotiRise/emoti-rise-be.git
 
-# 2. Enter your emoti-rise-be folder.
-cd emoti-rise-be
+# 2. Enter your user-registration-be folder.
+cd user-registration-be
 
 # 3. Create Environment variables file.
 cp .env.example .env
