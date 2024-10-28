@@ -3,8 +3,6 @@ import { applyDecorators } from '@nestjs/common';
 import { ApiProperty, type ApiPropertyOptions } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
-  ArrayMaxSize,
-  ArrayMinSize,
   IsBoolean,
   IsDate,
   IsDefined,
@@ -24,7 +22,6 @@ import {
   ValidateNested,
 } from 'class-validator';
 
-import { supportedLanguageCount } from '../constants';
 import { type Constructor } from '../types';
 import { ApiEnumProperty, ApiUUIDProperty } from './property.decorators';
 import {
@@ -223,8 +220,6 @@ export function TranslationsField(
     IFieldOptions,
 ): PropertyDecorator {
   const decorators = [
-    ArrayMinSize(supportedLanguageCount),
-    ArrayMaxSize(supportedLanguageCount),
     ValidateNested({
       each: true,
     }),

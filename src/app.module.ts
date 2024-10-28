@@ -16,7 +16,6 @@ import {
 import { DataSource } from 'typeorm';
 import { addTransactionalDataSource } from 'typeorm-transactional';
 
-import { HealthCheckerModule } from './modules/health-checker/health-checker.module';
 import { UserModule } from './modules/user/user.module';
 import { ApiConfigService } from './shared/services/api-config.service';
 import { SharedModule } from './shared/shared.module';
@@ -72,7 +71,6 @@ import { SharedModule } from './shared/shared.module';
       imports: [SharedModule],
       inject: [ApiConfigService],
     }),
-    HealthCheckerModule,
   ],
   providers: [],
 })
