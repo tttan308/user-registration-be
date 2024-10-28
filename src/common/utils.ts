@@ -23,12 +23,12 @@ export function generateHash(password: string): string {
 export function validateHash(
   password: string | undefined,
   hash: string | undefined | null,
-): Promise<boolean> {
+): boolean {
   if (!password || !hash) {
-    return Promise.resolve(false);
+    return false;
   }
 
-  return bcrypt.compare(password, hash);
+  return bcrypt.compareSync(password, hash);
 }
 
 export function getVariableName<TResult>(

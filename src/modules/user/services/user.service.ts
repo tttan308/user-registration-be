@@ -54,7 +54,7 @@ export class UserService implements IUserService {
         throw new NotFoundException('User is not found');
       }
 
-      const isCorrectPassword = await validateHash(
+      const isCorrectPassword = validateHash(
         userRequest.password!,
         user.password,
       );
@@ -64,8 +64,12 @@ export class UserService implements IUserService {
       }
 
       const refreshToken = await this.signRefreshToken(userRequest);
+
       const tokenPayload: TokenPayload = {
-        accessToken: this.jwtService.sign(userRequest),
+        accessToken: this.jwtService.sign({
+          email: userRequest.email,
+          id: user.id,
+        }),
         refreshToken,
         user: userRequest,
       };
@@ -159,10 +163,13 @@ export class UserService implements IUserService {
         throw new NotFoundException('User is not found');
       }
 
-      const refreshToken: string = this.jwtService.sign(userRequest, {
-        secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
-        expiresIn: this.configService.get<string>('JWT_REFRESH_EXPIRED'),
-      });
+      const refreshToken: string = this.jwtService.sign(
+        { email: userRequest.email, id: user.id },
+        {
+          secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
+          expiresIn: this.configService.get<string>('JWT_REFRESH_EXPIRED'),
+        },
+      );
 
       const decodedToken: DecodedToken = this.jwtService.verify(refreshToken, {
         secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
