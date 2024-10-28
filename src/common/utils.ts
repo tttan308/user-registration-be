@@ -1,3 +1,8 @@
+import {
+  HttpException,
+  InternalServerErrorException,
+  type Logger,
+} from '@nestjs/common';
 import bcrypt from 'bcryptjs';
 
 /**
@@ -44,4 +49,18 @@ export function getVariableName<TResult>(
   const memberParts = fullMemberName.split('.');
 
   return memberParts[-1];
+}
+
+export function handleError(logger: Logger, error: unknown): HttpException {
+  logger.error(error);
+
+  if (error instanceof HttpException) {
+    throw error;
+  }
+
+  throw new InternalServerErrorException(error);
+}
+
+export function removeDuplicateSpace(q: string): string {
+  return q.trim().replaceAll(/\s+/g, ' ');
 }

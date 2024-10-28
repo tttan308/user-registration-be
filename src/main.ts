@@ -23,20 +23,14 @@ import { ApiConfigService } from './shared/services/api-config.service';
 import { SharedModule } from './shared/shared.module';
 
 export async function bootstrap(): Promise<NestExpressApplication> {
-  // initTelemetry({
-  //     appName: process.env.OPEN_TELEMETRY_APP_NAME || "boilerplate",
-  //     telemetryUrl: process.env.OPEN_TELEMETRY_URL || "http://localhost:4318/v1/metrics",
-  // });
-
   initializeTransactionalContext();
   const app = await NestFactory.create<NestExpressApplication>(
     AppModule,
     new ExpressAdapter(),
     { cors: true },
   );
-  app.enable('trust proxy'); // only if you're behind a reverse proxy (Heroku, Bluemix, AWS ELB, Nginx, etc)
+  app.enable('trust proxy');
   app.use(helmet());
-  // app.setGlobalPrefix('/api'); use api as global prefix if you don't have subdomain
   app.use(compression());
   app.use(morgan('combined'));
   app.enableVersioning();

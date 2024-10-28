@@ -61,8 +61,8 @@ Routes is following REST standard (Richardson level 3)
       expressBasicAuth({
         challenge: true,
         users: {
-          [process.env.SWAGGER_USER || 'alia']:
-            process.env.SWAGGER_PASSWORD || 'alia',
+          [process.env.SWAGGER_USER ?? 'alia']:
+            process.env.SWAGGER_PASSWORD ?? 'alia',
         },
       }),
     );

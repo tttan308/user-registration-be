@@ -1,15 +1,16 @@
-import { Column, Entity } from 'typeorm';
-
-import { AbstractEntity } from '../../../../common/abstract.entity';
-import { UseDto } from '../../../../decorators';
-import { UserDto, type UserDtoOptions } from '../dtos/responses/user.dto';
+import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity({ name: 'users' })
-@UseDto(UserDto)
-export class UserEntity extends AbstractEntity<UserDto, UserDtoOptions> {
+export class UserEntity {
+  @PrimaryGeneratedColumn('uuid')
+  id!: string;
+
   @Column({ unique: true, nullable: true, type: 'varchar' })
   email!: string | null;
 
   @Column({ nullable: true, type: 'varchar' })
   password!: string | null;
+
+  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  createdAt!: Date;
 }
