@@ -21,7 +21,7 @@ import {
   ValidateNested,
 } from 'class-validator';
 
-import { ApiEnumProperty, ApiUUIDProperty } from './property.decorators';
+import { ApiUUIDProperty } from './property.decorators';
 import {
   IsNullable,
   IsPassword,
@@ -274,12 +274,6 @@ export function EnumField<TEnum extends object>(
     decorators.push(IsNullable());
   } else {
     decorators.push(NotEquals(null));
-  }
-
-  if (options.swagger !== false) {
-    decorators.push(
-      ApiEnumProperty(getEnum, { ...options, isArray: options.each }),
-    );
   }
 
   return applyDecorators(...decorators);

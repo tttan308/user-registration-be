@@ -31,26 +31,6 @@ export function validateHash(
   return bcrypt.compareSync(password, hash);
 }
 
-export function getVariableName<TResult>(
-  getVar: () => TResult,
-): string | undefined {
-  const m = /\(\)=>(.*)/.exec(
-    getVar.toString().replaceAll(/(\r\n|\n|\r|\s)/gm, ''),
-  );
-
-  if (!m) {
-    throw new Error(
-      `The function does not contain a statement matching return variableName;`,
-    );
-  }
-
-  const fullMemberName = m[1];
-
-  const memberParts = fullMemberName.split('.');
-
-  return memberParts[-1];
-}
-
 export function handleError(logger: Logger, error: unknown): HttpException {
   logger.error(error);
 
