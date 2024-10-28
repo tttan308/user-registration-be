@@ -7,13 +7,24 @@ import {
   Post,
   Res,
 } from '@nestjs/common';
-import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiExtraModels,
+  ApiNotFoundResponse,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+  refs,
+} from '@nestjs/swagger';
 import { Response } from 'express';
 
 import { PublicRoute } from '../../../decorators';
 import { RefreshTokenBody } from '../domains/dtos/requests/refresh-token.dto';
 import { UserRequest } from '../domains/dtos/requests/user.dto';
-import { LogOutResponse } from '../domains/dtos/responses/logout.dto';
+import {
+  LogOutResponse,
+  RenewTokenResponse,
+} from '../domains/dtos/responses/logout.dto';
+import { TokenPayload } from '../domains/dtos/responses/token.dto';
 import { RefreshTokenEntity } from '../domains/entities/refresh-token.entity';
 import { IUserService } from '../services/user.service';
 
@@ -92,6 +103,35 @@ export class UserController {
       };
 
       return res.status(HttpStatus.CREATED).json(logOutResponse);
+    } catch (error) {
+      return res.status(HttpStatus.NOT_FOUND).json(error);
+    }
+  }
+
+  @Post('refresh')
+  @ApiOperation({ summary: 'Get new access token' })
+  @ApiExtraModels(TokenPayload, RenewTokenResponse)
+  @ApiResponse({
+    status: HttpStatus.CREATED,
+    description: 'Get new access token',
+    content: {
+      application_json: {
+        schema: {
+          anyOf: refs(TokenPayload, RenewTokenResponse),
+        },
+      },
+    },
+  })
+  @ApiNotFoundResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Get new access token failed',
+  })
+  @PublicRoute(true)
+  async renewToken(@Body() token: RefreshTokenBody, @Res() res: Response) {
+    try {
+      const newPairToken = await this.userService.renewToken(token);
+
+      return newPairToken;
     } catch (error) {
       return res.status(HttpStatus.NOT_FOUND).json(error);
     }

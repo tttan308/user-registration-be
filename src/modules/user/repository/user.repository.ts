@@ -16,6 +16,7 @@ export interface IUserRepository {
   findUserByEmail(email: string): Promise<UserEntity | null>;
   createUser(user: UserRequest): Promise<UserEntity | null>;
   removeRefreshToken(token: string): Promise<RefreshTokenEntity>;
+  isTokenExist(userId: string, refreshToken: string): Promise<boolean>;
 }
 
 @Injectable()
@@ -80,5 +81,11 @@ export class UserRepository implements IUserRepository {
     return refreshToken;
   }
 
-  s;
+  async isTokenExist(userId: string, refreshToken: string): Promise<boolean> {
+    const token = await this.tokenRepository.findOne({
+      where: { userId, token: refreshToken },
+    });
+
+    return Boolean(token);
+  }
 }

@@ -11,6 +11,7 @@ import { JwtService } from '@nestjs/jwt';
 import { generateHash, handleError, validateHash } from '../../../common/utils';
 import { RefreshTokenBody } from '../domains/dtos/requests/refresh-token.dto';
 import { UserRequest } from '../domains/dtos/requests/user.dto';
+import { RenewTokenResponse } from '../domains/dtos/responses/logout.dto';
 import {
   DecodedToken,
   TokenPayload,
@@ -23,9 +24,9 @@ export interface IUserService {
   handleLogin(user: UserRequest): Promise<TokenPayload>;
   handleRegister(user: UserRequest): Promise<UserResponse>;
   handleLogout(refreshToken: RefreshTokenBody): Promise<RefreshTokenEntity>;
-  // renewToken(
-  //   refreshToken: RefreshTokenBody,
-  // ): Promise<TokenPayload | RenewTokenResponse>;
+  renewToken(
+    refreshToken: RefreshTokenBody,
+  ): Promise<TokenPayload | RenewTokenResponse>;
 }
 
 @Injectable()
@@ -93,59 +94,6 @@ export class UserService implements IUserService {
     }
   }
 
-  // async renewToken(refreshToken: RefreshTokenBody) {
-  //   try {
-  //     const secretKey =
-  //       this.configService.get<string>('JWT_REFRESH_SECRET') ??
-  //       'default_token_key';
-  //     const decoded: DecodedToken = this.jwtService.verify(refreshToken.token, {
-  //       secret: secretKey,
-  //     });
-  //     const userResponse: UserResponse = {
-  //       id: decoded.id,
-  //       email: decoded.email,
-  //       fullName: decoded.fullName,
-  //       role:
-  //         decoded.role === RoleType.USER.toString()
-  //           ? RoleType.USER
-  //           : RoleType.ADMIN,
-  //     };
-
-  //     const isTokenExisted = await this.authRepository.isTokenExist(
-  //       userResponse.id,
-  //       refreshToken.token,
-  //     );
-
-  //     if (!isTokenExisted) {
-  //       const renewTokenResponse: RenewTokenResponse = {
-  //         message: `Token was used`,
-  //       };
-
-  //       return renewTokenResponse;
-  //     }
-
-  //     const [newRefreshToken] = await Promise.all([
-  //       this.signRefreshToken(userResponse),
-  //       this.authRepository.removeRefreshToken(
-  //         userResponse.id,
-  //         refreshToken.token,
-  //       ),
-  //     ]);
-
-  //     const tokenPayload: TokenPayload = {
-  //       accessToken: this.jwtService.sign(userResponse),
-  //       refreshToken: newRefreshToken,
-  //       user: userResponse,
-  //     };
-
-  //     return tokenPayload;
-  //   } catch (error) {
-  //     this.logger.error(error);
-
-  //     throw error;
-  //   }
-  // }
-
   async signRefreshToken(userRequest: UserRequest) {
     try {
       if (!userRequest.email) {
@@ -208,6 +156,53 @@ export class UserService implements IUserService {
       });
 
       return user;
+    } catch (error) {
+      this.logger.error(error);
+
+      throw error;
+    }
+  }
+
+  async renewToken(refreshToken: RefreshTokenBody) {
+    try {
+      const secretKey =
+        this.configService.get<string>('JWT_REFRESH_SECRET') ??
+        'default_token_key';
+
+      const decoded: DecodedToken = this.jwtService.verify(refreshToken.token, {
+        secret: secretKey,
+      });
+
+      const userResponse: UserResponse = {
+        id: decoded.id,
+        email: decoded.email,
+      };
+
+      const isTokenExisted = await this.userRepository.isTokenExist(
+        userResponse.id,
+        refreshToken.token,
+      );
+
+      if (!isTokenExisted) {
+        const renewTokenResponse: RenewTokenResponse = {
+          message: `Token was used`,
+        };
+
+        return renewTokenResponse;
+      }
+
+      const [newRefreshToken] = await Promise.all([
+        this.signRefreshToken(userResponse),
+        this.userRepository.removeRefreshToken(refreshToken.token),
+      ]);
+
+      const tokenPayload: TokenPayload = {
+        accessToken: this.jwtService.sign(userResponse),
+        refreshToken: newRefreshToken,
+        user: userResponse,
+      };
+
+      return tokenPayload;
     } catch (error) {
       this.logger.error(error);
 
