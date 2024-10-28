@@ -5,7 +5,6 @@ import { Type } from 'class-transformer';
 import {
   IsBoolean,
   IsDate,
-  IsDefined,
   IsEmail,
   IsEnum,
   IsInt,
@@ -22,15 +21,7 @@ import {
   ValidateNested,
 } from 'class-validator';
 
-import { type Constructor } from '../types';
 import { ApiEnumProperty, ApiUUIDProperty } from './property.decorators';
-import {
-  PhoneNumberSerializer,
-  ToArray,
-  ToBoolean,
-  ToLowerCase,
-  ToUpperCase,
-} from './transform.decorators';
 import {
   IsNullable,
   IsPassword,
@@ -62,7 +53,6 @@ interface IStringFieldOptions extends IFieldOptions {
   toUpperCase?: boolean;
 }
 
-type IClassFieldOptions = IFieldOptions;
 type IBooleanFieldOptions = IFieldOptions;
 type IEnumFieldOptions = IFieldOptions;
 
@@ -79,10 +69,6 @@ export function NumberField(
 
   if (options.swagger !== false) {
     decorators.push(ApiProperty({ type: Number, ...options }));
-  }
-
-  if (options.each) {
-    decorators.push(ToArray());
   }
 
   if (options.int) {
@@ -141,14 +127,6 @@ export function StringField(
     decorators.push(MaxLength(options.maxLength, { each: options.each }));
   }
 
-  if (options.toLowerCase) {
-    decorators.push(ToLowerCase());
-  }
-
-  if (options.toUpperCase) {
-    decorators.push(ToUpperCase());
-  }
-
   return applyDecorators(...decorators);
 }
 
@@ -190,7 +168,7 @@ export function PasswordFieldOptional(
 export function BooleanField(
   options: Omit<ApiPropertyOptions, 'type'> & IBooleanFieldOptions = {},
 ): PropertyDecorator {
-  const decorators = [ToBoolean(), IsBoolean()];
+  const decorators = [IsBoolean()];
 
   if (options.nullable) {
     decorators.push(IsNullable());
@@ -298,54 +276,11 @@ export function EnumField<TEnum extends object>(
     decorators.push(NotEquals(null));
   }
 
-  if (options.each) {
-    decorators.push(ToArray());
-  }
-
   if (options.swagger !== false) {
     decorators.push(
       ApiEnumProperty(getEnum, { ...options, isArray: options.each }),
     );
   }
-
-  return applyDecorators(...decorators);
-}
-
-// eslint-disable-next-line @typescript-eslint/ban-types
-export function ClassField<TClass extends Constructor>(
-  getClass: () => TClass,
-  options: Omit<ApiPropertyOptions, 'type'> & IClassFieldOptions = {},
-): PropertyDecorator {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const classValue = getClass();
-
-  const decorators = [
-    Type(() => classValue),
-    ValidateNested({ each: options.each }),
-  ];
-
-  if (options.required !== false) {
-    decorators.push(IsDefined());
-  }
-
-  if (options.nullable) {
-    decorators.push(IsNullable());
-  } else {
-    decorators.push(NotEquals(null));
-  }
-
-  if (options.swagger !== false) {
-    decorators.push(
-      ApiProperty({
-        type: () => classValue,
-        ...options,
-      }),
-    );
-  }
-
-  // if (options.each) {
-  //   decorators.push(ToArray());
-  // }
 
   return applyDecorators(...decorators);
 }
@@ -359,18 +294,6 @@ export function EnumFieldOptional<TEnum extends object>(
   return applyDecorators(
     IsUndefinable(),
     EnumField(getEnum, { required: false, ...options }),
-  );
-}
-
-// eslint-disable-next-line @typescript-eslint/ban-types
-export function ClassFieldOptional<TClass extends Constructor>(
-  getClass: () => TClass,
-  options: Omit<ApiPropertyOptions, 'type' | 'required'> &
-    IClassFieldOptions = {},
-): PropertyDecorator {
-  return applyDecorators(
-    IsUndefinable(),
-    ClassField(getClass, { required: false, ...options }),
   );
 }
 
@@ -407,7 +330,7 @@ export function EmailFieldOptional(
 export function PhoneField(
   options: Omit<ApiPropertyOptions, 'type'> & IFieldOptions = {},
 ): PropertyDecorator {
-  const decorators = [IsPhoneNumber(), PhoneNumberSerializer()];
+  const decorators = [IsPhoneNumber()];
 
   if (options.nullable) {
     decorators.push(IsNullable());
@@ -445,10 +368,6 @@ export function UUIDField(
 
   if (options.swagger !== false) {
     decorators.push(ApiUUIDProperty(options));
-  }
-
-  if (options.each) {
-    decorators.push(ToArray());
   }
 
   return applyDecorators(...decorators);
