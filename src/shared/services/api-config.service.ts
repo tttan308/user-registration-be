@@ -10,7 +10,7 @@ import { SnakeNamingStrategy } from '../../snake-naming.strategy';
 
 @Injectable()
 export class ApiConfigService {
-  constructor(private configService: ConfigService) {}
+  constructor(private readonly configService: ConfigService) {}
 
   get isDevelopment(): boolean {
     return this.nodeEnv === 'development';
