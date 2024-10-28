@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
@@ -15,6 +15,7 @@ export interface IUserRepository {
   ): Promise<RefreshTokenEntity>;
   findUserByEmail(email: string): Promise<UserEntity | null>;
   createUser(user: UserRequest): Promise<UserEntity | null>;
+  removeRefreshToken(token: string): Promise<RefreshTokenEntity>;
 }
 
 @Injectable()
@@ -64,4 +65,20 @@ export class UserRepository implements IUserRepository {
 
     return newUser;
   }
+
+  async removeRefreshToken(token: string): Promise<RefreshTokenEntity> {
+    const refreshToken = await this.tokenRepository.findOne({
+      where: { token },
+    });
+
+    if (!refreshToken) {
+      throw new NotFoundException('Token not found');
+    }
+
+    await this.tokenRepository.remove(refreshToken);
+
+    return refreshToken;
+  }
+
+  s;
 }

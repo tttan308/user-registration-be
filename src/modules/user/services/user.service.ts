@@ -9,21 +9,20 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 
 import { generateHash, handleError, validateHash } from '../../../common/utils';
+import { RefreshTokenBody } from '../domains/dtos/requests/refresh-token.dto';
 import { UserRequest } from '../domains/dtos/requests/user.dto';
 import {
   DecodedToken,
   TokenPayload,
 } from '../domains/dtos/responses/token.dto';
 import { UserResponse } from '../domains/dtos/responses/user-response.dto';
+import { RefreshTokenEntity } from '../domains/entities/refresh-token.entity';
 import { UserRepository } from '../repository/user.repository';
 
 export interface IUserService {
   handleLogin(user: UserRequest): Promise<TokenPayload>;
   handleRegister(user: UserRequest): Promise<UserResponse>;
-  // handleLogout(
-  //   userResponse: UserResponse,
-  //   refreshToken: RefreshTokenBody,
-  // ): Promise<RefreshTokenEntity>;
+  handleLogout(refreshToken: RefreshTokenBody): Promise<RefreshTokenEntity>;
   // renewToken(
   //   refreshToken: RefreshTokenBody,
   // ): Promise<TokenPayload | RenewTokenResponse>;
@@ -80,23 +79,19 @@ export class UserService implements IUserService {
     }
   }
 
-  // async handleLogout(
-  //   userResponse: UserResponse,
-  //   refreshToken: RefreshTokenBody,
-  // ) {
-  //   try {
-  //     const removeToken = await this.userRepository.removeRefreshToken(
-  //       userResponse.id,
-  //       refreshToken.token,
-  //     );
+  async handleLogout(refreshToken: RefreshTokenBody) {
+    try {
+      const removeToken = await this.userRepository.removeRefreshToken(
+        refreshToken.token,
+      );
 
-  //     return removeToken;
-  //   } catch (error) {
-  //     this.logger.error(error);
+      return removeToken;
+    } catch (error) {
+      this.logger.error(error);
 
-  //     throw error;
-  //   }
-  // }
+      throw error;
+    }
+  }
 
   // async renewToken(refreshToken: RefreshTokenBody) {
   //   try {

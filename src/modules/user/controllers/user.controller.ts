@@ -11,7 +11,10 @@ import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Response } from 'express';
 
 import { PublicRoute } from '../../../decorators';
+import { RefreshTokenBody } from '../domains/dtos/requests/refresh-token.dto';
 import { UserRequest } from '../domains/dtos/requests/user.dto';
+import { LogOutResponse } from '../domains/dtos/responses/logout.dto';
+import { RefreshTokenEntity } from '../domains/entities/refresh-token.entity';
 import { IUserService } from '../services/user.service';
 
 @Controller('/user')
@@ -61,6 +64,34 @@ export class UserController {
       const user = await this.userService.handleRegister(userRequest);
 
       return res.status(HttpStatus.CREATED).json(user);
+    } catch (error) {
+      return res.status(HttpStatus.NOT_FOUND).json(error);
+    }
+  }
+
+  @Post('/logout')
+  @ApiOperation({ summary: 'Logout' })
+  @HttpCode(HttpStatus.CREATED)
+  @ApiResponse({
+    status: HttpStatus.CREATED,
+    description: 'Logout success',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Logout failed',
+  })
+  @PublicRoute(true)
+  async logout(@Body() token: RefreshTokenBody, @Res() res: Response) {
+    try {
+      const removedToken: RefreshTokenEntity =
+        await this.userService.handleLogout(token);
+
+      const logOutResponse: LogOutResponse = {
+        message: 'Logged out',
+        userId: removedToken.userId,
+      };
+
+      return res.status(HttpStatus.CREATED).json(logOutResponse);
     } catch (error) {
       return res.status(HttpStatus.NOT_FOUND).json(error);
     }
