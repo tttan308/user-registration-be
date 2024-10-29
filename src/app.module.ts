@@ -40,9 +40,14 @@ import { SharedModule } from './shared/shared.module';
           throw new Error('Invalid options passed');
         }
 
-        return Promise.resolve(
-          addTransactionalDataSource(new DataSource(options)),
-        );
+        const dataSource = new DataSource(options);
+        if (!dataSource.isInitialized) {
+          return dataSource
+            .initialize()
+            .then(() => addTransactionalDataSource(dataSource));
+        }
+
+        return Promise.resolve(addTransactionalDataSource(dataSource));
       },
     }),
   ],
