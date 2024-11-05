@@ -25,8 +25,12 @@ import { UserService } from './services/user.service';
     }),
   ],
   controllers: [UserController],
-  exports: [UserService],
+  exports: [UserService, 'IUserService'],
   providers: [
+    {
+      provide: 'IUserService',
+      useClass: UserService,
+    },
     UserService,
     {
       provide: 'IUserRepository',
