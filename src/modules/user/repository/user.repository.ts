@@ -3,20 +3,15 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
 import { UserRequest } from '../domains/dtos/requests/user.dto';
-import { DecodedToken } from '../domains/dtos/responses/token.dto';
-import { RefreshTokenEntity } from '../domains/entities/refresh-token.entity';
+import { TokenEntity } from '../domains/entities/token.entity';
 import { UserEntity } from '../domains/entities/user.entity';
 
 export interface IUserRepository {
-  saveRefreshToken(
-    userId: string,
-    refreshToken: string,
-    decodedToken: DecodedToken,
-  ): Promise<RefreshTokenEntity>;
   findUserByEmail(email: string): Promise<UserEntity | null>;
   createUser(user: UserRequest): Promise<UserEntity | null>;
-  removeRefreshToken(token: string): Promise<RefreshTokenEntity>;
+  removeToken(token: string): Promise<TokenEntity>;
   isTokenExist(userId: string, refreshToken: string): Promise<boolean>;
+  findUserById(userId: string): Promise<UserEntity | null>;
 }
 
 @Injectable()
@@ -24,28 +19,9 @@ export class UserRepository implements IUserRepository {
   constructor(
     @InjectRepository(UserEntity)
     private readonly userRepository: Repository<UserEntity>,
-    @InjectRepository(RefreshTokenEntity)
-    private readonly tokenRepository: Repository<RefreshTokenEntity>,
+    @InjectRepository(TokenEntity)
+    private readonly tokenRepository: Repository<TokenEntity>,
   ) {}
-
-  async saveRefreshToken(
-    userId: string,
-    refreshToken: string,
-    decodedToken: DecodedToken,
-  ): Promise<RefreshTokenEntity> {
-    const createToken = {
-      token: refreshToken,
-      iat: new Date(decodedToken.iat * 1000),
-      exp: new Date(decodedToken.exp * 1000),
-      userId,
-    };
-
-    const tokenEntity = this.tokenRepository.create(createToken);
-
-    await this.tokenRepository.save(tokenEntity);
-
-    return tokenEntity;
-  }
 
   async findUserByEmail(email: string): Promise<UserEntity | null> {
     const user = await this.userRepository.findOne({
@@ -67,7 +43,7 @@ export class UserRepository implements IUserRepository {
     return newUser;
   }
 
-  async removeRefreshToken(token: string): Promise<RefreshTokenEntity> {
+  async removeToken(token: string): Promise<TokenEntity> {
     const refreshToken = await this.tokenRepository.findOne({
       where: { token },
     });
@@ -87,5 +63,13 @@ export class UserRepository implements IUserRepository {
     });
 
     return Boolean(token);
+  }
+
+  async findUserById(userId: string): Promise<UserEntity | null> {
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+    });
+
+    return user || null;
   }
 }

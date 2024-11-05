@@ -4,7 +4,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { UserController } from './controllers/user.controller';
-import { RefreshTokenEntity } from './domains/entities/refresh-token.entity';
+import { TokenEntity } from './domains/entities/token.entity';
 import { UserEntity } from './domains/entities/user.entity';
 import { UserRepository } from './repository/user.repository';
 import { UserService } from './services/user.service';
@@ -12,7 +12,7 @@ import { UserService } from './services/user.service';
 @Module({
   imports: [
     TypeOrmModule.forFeature([UserEntity]),
-    TypeOrmModule.forFeature([RefreshTokenEntity]),
+    TypeOrmModule.forFeature([TokenEntity]),
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
@@ -25,12 +25,9 @@ import { UserService } from './services/user.service';
     }),
   ],
   controllers: [UserController],
-  exports: ['IUserService'],
+  exports: [UserService],
   providers: [
-    {
-      provide: 'IUserService',
-      useClass: UserService,
-    },
+    UserService,
     {
       provide: 'IUserRepository',
       useClass: UserRepository,

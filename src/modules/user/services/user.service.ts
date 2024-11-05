@@ -4,29 +4,25 @@ import {
   Injectable,
   Logger,
   NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 
 import { generateHash, handleError, validateHash } from '../../../common/utils';
-import { RefreshTokenBody } from '../domains/dtos/requests/refresh-token.dto';
 import { UserRequest } from '../domains/dtos/requests/user.dto';
-import { RenewTokenResponse } from '../domains/dtos/responses/logout.dto';
-import {
-  DecodedToken,
-  TokenPayload,
-} from '../domains/dtos/responses/token.dto';
+import { TokenPayload } from '../domains/dtos/responses/token.dto';
 import { UserResponse } from '../domains/dtos/responses/user-response.dto';
-import { RefreshTokenEntity } from '../domains/entities/refresh-token.entity';
+import { TokenEntity } from '../domains/entities/token.entity';
 import { UserRepository } from '../repository/user.repository';
+import { TokenBody } from '../domains/dtos/requests/token.dto';
+import { ProfileResponse } from '../domains/dtos/responses/profile.dto';
 
 export interface IUserService {
   handleLogin(user: UserRequest): Promise<TokenPayload>;
   handleRegister(user: UserRequest): Promise<UserResponse>;
-  handleLogout(refreshToken: RefreshTokenBody): Promise<RefreshTokenEntity>;
-  renewToken(
-    refreshToken: RefreshTokenBody,
-  ): Promise<TokenPayload | RenewTokenResponse>;
+  handleLogout(token: TokenBody): Promise<TokenEntity>;
+  getUserProfile(userId: string): Promise<ProfileResponse>;
 }
 
 @Injectable()
@@ -63,15 +59,15 @@ export class UserService implements IUserService {
         throw new BadRequestException('Password is incorrect');
       }
 
-      const refreshToken = await this.signRefreshToken(userRequest);
-
       const tokenPayload: TokenPayload = {
         accessToken: this.jwtService.sign({
           email: userRequest.email,
           id: user.id,
         }),
-        refreshToken,
-        user: userRequest,
+        user: {
+          id: user.id,
+          email: userRequest.email,
+        },
       };
 
       return tokenPayload;
@@ -80,11 +76,9 @@ export class UserService implements IUserService {
     }
   }
 
-  async handleLogout(refreshToken: RefreshTokenBody) {
+  async handleLogout(token: TokenBody): Promise<TokenEntity> {
     try {
-      const removeToken = await this.userRepository.removeRefreshToken(
-        refreshToken.token,
-      );
+      const removeToken = await this.userRepository.removeToken(token.token);
 
       return removeToken;
     } catch (error) {
@@ -94,43 +88,7 @@ export class UserService implements IUserService {
     }
   }
 
-  async signRefreshToken(userRequest: UserRequest) {
-    try {
-      if (!userRequest.email) {
-        throw new BadRequestException('Email is required');
-      }
-
-      const user = await this.userRepository.findUserByEmail(userRequest.email);
-
-      if (!user) {
-        throw new NotFoundException('User is not found');
-      }
-
-      const refreshToken: string = this.jwtService.sign(
-        { email: userRequest.email, id: user.id },
-        {
-          secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
-          expiresIn: this.configService.get<string>('JWT_REFRESH_EXPIRED'),
-        },
-      );
-
-      const decodedToken: DecodedToken = this.jwtService.verify(refreshToken, {
-        secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
-      });
-
-      await this.userRepository.saveRefreshToken(
-        user.id,
-        refreshToken,
-        decodedToken,
-      );
-
-      return refreshToken;
-    } catch (error) {
-      throw handleError(this.logger, error);
-    }
-  }
-
-  async handleRegister(userRequest: UserRequest) {
+  async handleRegister(userRequest: UserRequest): Promise<UserResponse> {
     try {
       if (!userRequest.email) {
         throw new BadRequestException('Email is required');
@@ -163,46 +121,21 @@ export class UserService implements IUserService {
     }
   }
 
-  async renewToken(refreshToken: RefreshTokenBody) {
+  async getUserProfile(userId: string): Promise<ProfileResponse> {
     try {
-      const secretKey =
-        this.configService.get<string>('JWT_REFRESH_SECRET') ??
-        'default_token_key';
+      const user = await this.userRepository.findUserById(userId);
 
-      const decoded: DecodedToken = this.jwtService.verify(refreshToken.token, {
-        secret: secretKey,
-      });
-
-      const userResponse: UserResponse = {
-        id: decoded.id,
-        email: decoded.email,
-      };
-
-      const isTokenExisted = await this.userRepository.isTokenExist(
-        userResponse.id,
-        refreshToken.token,
-      );
-
-      if (!isTokenExisted) {
-        const renewTokenResponse: RenewTokenResponse = {
-          message: `Token was used`,
-        };
-
-        return renewTokenResponse;
+      if (!user) {
+        throw new UnauthorizedException('User not found');
       }
 
-      const [newRefreshToken] = await Promise.all([
-        this.signRefreshToken(userResponse),
-        this.userRepository.removeRefreshToken(refreshToken.token),
-      ]);
-
-      const tokenPayload: TokenPayload = {
-        accessToken: this.jwtService.sign(userResponse),
-        refreshToken: newRefreshToken,
-        user: userResponse,
+      const profileResponse: ProfileResponse = {
+        id: user.id,
+        email: user.email ?? '',
+        createdAt: user.createdAt,
       };
 
-      return tokenPayload;
+      return profileResponse;
     } catch (error) {
       this.logger.error(error);
 

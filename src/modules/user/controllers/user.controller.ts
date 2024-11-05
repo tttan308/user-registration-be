@@ -1,31 +1,26 @@
+/* eslint-disable @typescript-eslint/no-unsafe-call */
 import {
   Body,
   Controller,
+  Get,
   HttpCode,
   HttpStatus,
   Inject,
+  Param,
   Post,
   Res,
+  UseGuards,
 } from '@nestjs/common';
-import {
-  ApiExtraModels,
-  ApiNotFoundResponse,
-  ApiOperation,
-  ApiResponse,
-  ApiTags,
-  refs,
-} from '@nestjs/swagger';
+import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Response } from 'express';
 
 import { PublicRoute } from '../../../decorators';
-import { RefreshTokenBody } from '../domains/dtos/requests/refresh-token.dto';
+import { JwtAuthGuard } from '../../../guards/jwt-auth.guard';
+import { TokenBody } from '../domains/dtos/requests/token.dto';
 import { UserRequest } from '../domains/dtos/requests/user.dto';
-import {
-  LogOutResponse,
-  RenewTokenResponse,
-} from '../domains/dtos/responses/logout.dto';
-import { TokenPayload } from '../domains/dtos/responses/token.dto';
-import { RefreshTokenEntity } from '../domains/entities/refresh-token.entity';
+import { LogOutResponse } from '../domains/dtos/responses/logout.dto';
+import { ProfileResponse } from '../domains/dtos/responses/profile.dto';
+import { TokenEntity } from '../domains/entities/token.entity';
 import { IUserService } from '../services/user.service';
 
 @Controller('/user')
@@ -92,9 +87,10 @@ export class UserController {
     description: 'Logout failed',
   })
   @PublicRoute(true)
-  async logout(@Body() token: RefreshTokenBody, @Res() res: Response) {
+  async logout(@Body() token: TokenBody, @Res() res: Response) {
     try {
-      const removedToken: RefreshTokenEntity =
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      const removedToken: TokenEntity =
         await this.userService.handleLogout(token);
 
       const logOutResponse: LogOutResponse = {
@@ -108,32 +104,27 @@ export class UserController {
     }
   }
 
-  @Post('refresh')
-  @ApiOperation({ summary: 'Get new access token' })
-  @ApiExtraModels(TokenPayload, RenewTokenResponse)
+  @Get('/profile')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Get user profile' })
+  @HttpCode(HttpStatus.OK)
   @ApiResponse({
-    status: HttpStatus.CREATED,
-    description: 'Get new access token',
-    content: {
-      application_json: {
-        schema: {
-          anyOf: refs(TokenPayload, RenewTokenResponse),
-        },
-      },
-    },
+    status: HttpStatus.OK,
+    description: 'Profile retrieved successfully',
   })
-  @ApiNotFoundResponse({
-    status: HttpStatus.NOT_FOUND,
-    description: 'Get new access token failed',
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Unauthorized access',
   })
-  @PublicRoute(true)
-  async renewToken(@Body() token: RefreshTokenBody, @Res() res: Response) {
+  async getProfile(@Param('id') userId: string, @Res() res: Response) {
     try {
-      const newPairToken = await this.userService.renewToken(token);
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      const user: ProfileResponse =
+        await this.userService.getUserProfile(userId);
 
-      return newPairToken;
+      return res.status(HttpStatus.OK).json(user);
     } catch (error) {
-      return res.status(HttpStatus.NOT_FOUND).json(error);
+      return res.status(HttpStatus.UNAUTHORIZED).json(error);
     }
   }
 }
